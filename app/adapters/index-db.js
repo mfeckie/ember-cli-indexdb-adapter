@@ -1,4 +1,5 @@
-import DS from 'ember-data';
+import IndexDB from 'indexdb-adapter/adapters/index-db';
 
-export default DS.Adapter.extend({
+
+export default IndexDB.extend({
 });

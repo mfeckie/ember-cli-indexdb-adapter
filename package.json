@@ -38,6 +38,7 @@
     "ember-addon"
   ],
   "ember-addon": {
+    "after": "ember-data",
     "configPath": "tests/dummy/config"
   }
 }
