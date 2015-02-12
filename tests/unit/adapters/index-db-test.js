@@ -78,7 +78,7 @@ test('it exists', function () {
   ok(adapter);
 });
 
-test('Runs migrations', function () {
+test('Creates a database', function () {
   QUnit.stop();
   migration.migrate().then(function() {
     return openDatabase(databaseName);
@@ -86,5 +86,58 @@ test('Runs migrations', function () {
     db.close();
     ok(db.objectStoreNames.contains("App.Person"), "Person object store created");
     QUnit.start();
+  });
+});
+
+test("#addModel supports autoIncrement", function() {
+  var TestMigration = DS.IndexedDBMigration.extend({
+    migrations: function() {
+      this.addModel(App.Person, {autoIncrement: true});
+    }
+  });
+
+  migration = TestMigration.create({
+    databaseName: databaseName,
+    version: 1
+  });
+
+  QUnit.stop();
+  migration.migrate().then(function() {
+    return openDatabase(databaseName);
+  }).then(function(db) {
+    var stores = db.objectStoreNames,
+      transaction = db.transaction("App.Person", 'readwrite'),
+      objectStore = transaction.objectStore("App.Person"),
+      saveRequest;
+
+    ok(stores.contains("App.Person"), "Person object store created");
+    saveRequest = objectStore.add({name: "Test"});
+    saveRequest.onsuccess = function(event) {
+      var source = event.target.source;
+
+      equal(source.keyPath, "id", "Object store's id field is 'id'");
+      ok(source.autoIncrement, "Object store is auto increment");
+      equal(source.name, "App.Person", "Object store has correct name");
+
+
+      objectStore.get(1).onsuccess = function() {
+        equal(this.result.id, 1, "First id was 1");
+        equal(this.result.name, "Test", "First name is correct");
+
+        saveRequest = objectStore.add({name: "Test2"});
+        saveRequest.onsuccess = function(event) {
+          equal(this.result, 2, "Second id was 2");
+
+          db.close();
+          QUnit.start();
+        };
+      };
+    };
+
+    saveRequest.onerror = function(err) {
+      console.error(err);
+      db.close();
+      QUnit.start();
+    };
   });
 });

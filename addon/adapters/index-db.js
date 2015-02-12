@@ -19,9 +19,10 @@ DS.IndexedDBMigration = Ember.Object.extend({
 
       connection.onupgradeneeded = function (event) {
         Ember.run(function () {
-          self.set('memoizedDatabaseForUpgrade', event.target.result);
+          var dbToUpgrade = 'dbToUpgrade';
+          self.set(dbToUpgrade, event.target.result);
           self.runMigrations();
-          self.set('memoizedDatabaseForUpgrade', null);
+          self.set(dbToUpgrade, null);
         });
       };
 
@@ -33,7 +34,7 @@ DS.IndexedDBMigration = Ember.Object.extend({
     });
   },
   addModel: function (modelName, opts) {
-    var db = this.get('memoizedDatabaseForUpgrade');
+    var db = this.get('dbToUpgrade');
     var options = opts || {};
 
     Ember.run(function () {
