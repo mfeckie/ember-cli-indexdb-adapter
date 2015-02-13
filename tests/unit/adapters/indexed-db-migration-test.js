@@ -9,7 +9,7 @@ var databaseName = 'ember-cli-indexed-db-test-database';
 
 var App = {};
 
-var migration;
+var migration, adapter;
 
 var deleteDatabase = function (databaseName) {
   var deletion = indexedDB.deleteDatabase(databaseName);
@@ -41,7 +41,7 @@ var openDatabase = function (databaseName) {
   });
 };
 
-moduleFor('adapter:index-db', 'IndexDbAdapter', {
+moduleFor('adapter:indexed-db', 'IndexDbAdapter Migrations', {
   // Specify the other units that are required for this test.
   // needs: ['serializer:foo']
   setup: function () {
@@ -62,21 +62,12 @@ moduleFor('adapter:index-db', 'IndexDbAdapter', {
       databaseName: databaseName,
       version: 1
     });
-    window.migration = migration;
-
   },
   teardown: function () {
     deleteDatabase(databaseName);
   }
 });
 
-var adapter;
-
-// Replace this with your real tests.
-test('it exists', function () {
-  adapter = this.subject();
-  ok(adapter);
-});
 
 test('Creates a database', function () {
   QUnit.stop();
@@ -125,9 +116,8 @@ test("#addModel supports autoIncrement", function() {
         equal(this.result.name, "Test", "First name is correct");
 
         saveRequest = objectStore.add({name: "Test2"});
-        saveRequest.onsuccess = function(event) {
+        saveRequest.onsuccess = function() {
           equal(this.result, 2, "Second id was 2");
-
           db.close();
           QUnit.start();
         };
