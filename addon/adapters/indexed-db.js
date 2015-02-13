@@ -26,14 +26,16 @@ DS.IndexedDBMigration = Ember.Object.extend({
         });
       };
 
-      connection.onerror = function (err) {
+      connection.onerror = function (event) {
         console.log('Error connecting to ', self.databaseName);
-        console.error('Error: ', err);
-        reject(err);
+        console.log('Error migrating: ', event.target.error.message);
+        reject(event);
       };
     });
   },
   addModel: function (modelName, opts) {
+    console.log('Called addModel with: ', modelName);
+
     var db = this.get('dbToUpgrade');
     var options = opts || {};
 
@@ -55,12 +57,14 @@ DS.IndexedDBMigration = Ember.Object.extend({
   },
   runMigrations: function () {
     this.migrations.call(this);
-  }
+  },
+  dbToUpgrade: null
 });
 
-
-
-
 export default DS.Adapter.extend({
-
+  databaseName: 'IDBAdapter',
+  version: 1,
+  init: function () {
+  },
+  migration: DS.IndexedDBMigration.extend()
 });

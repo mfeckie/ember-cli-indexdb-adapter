@@ -4,7 +4,7 @@ import {
 } from 'ember-qunit';
 
 
-moduleFor('serializer:index-db', 'IndexDbSerializer', {
+moduleFor('serializer:indexed-db', 'IndexedDB Serializer', {
   // Specify the other units that are required for this test.
   // needs: ['serializer:foo']
 });
