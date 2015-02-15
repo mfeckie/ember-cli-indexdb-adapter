@@ -3,6 +3,11 @@ import {
   test
   } from 'ember-qunit';
 
+import {
+  deleteDatabase,
+  openDatabase
+  } from  'dummy/tests/helpers/database-helpers';
+
 import Ember from 'ember';
 
 var databaseName = 'ember-cli-indexed-db-test-database';
@@ -10,36 +15,6 @@ var databaseName = 'ember-cli-indexed-db-test-database';
 var App = {};
 
 var migration, adapter;
-
-var deleteDatabase = function (databaseName) {
-  var deletion = indexedDB.deleteDatabase(databaseName);
-  deletion.onsuccess = function () {
-
-  };
-  deletion.onerror = function (err) {
-    console.log('Problem deleting database:');
-    console.log(err);
-  };
-};
-
-var openDatabase = function (databaseName) {
-  return new Ember.RSVP.Promise(function (resolve, reject) {
-    var connection = indexedDB.open(databaseName);
-    connection.onsuccess = function (event) {
-      Ember.run(function () {
-        var db = connection.result;
-
-        db.onerror = function (event) {
-          Ember.run(function () {
-            console.error('Error: ', event);
-            reject(event);
-          });
-        };
-        resolve(event.target.result);
-      });
-    };
-  });
-};
 
 moduleFor('adapter:indexed-db', 'IndexDbAdapter Migrations', {
   // Specify the other units that are required for this test.

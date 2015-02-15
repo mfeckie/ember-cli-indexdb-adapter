@@ -45,7 +45,10 @@
     "currentURL",
     "currentPath",
     "currentRouteName",
-    "indexedDB"
+    "indexedDB",
+    "deleteDatabase",
+    "openDatabase",
+    "setupStore"
   ],
   "node": false,
   "browser": false,
