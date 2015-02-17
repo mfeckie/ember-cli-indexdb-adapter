@@ -28,29 +28,60 @@ export default DS.Adapter.extend({
     var self = this;
 
     return new Ember.RSVP.Promise(function (resolve, reject) {
-
       var newVersion = self.get('version') + 1;
       self.set('version', newVersion);
       var conn = indexedDB.open(self.get('databaseName'), newVersion);
+
       conn.onsuccess = function (event) {
-        event.target.result.close();
         Ember.run(function () {
-          resolve();
+          resolve(event);
+          event.target.result.close();
         });
       };
+
       conn.onupgradeneeded = function (event) {
         var db = event.target.result;
         Ember.run(function () {
-          db.createObjectStore(modelName);
-          resolve();
+          db.createObjectStore(modelName, {autoIncrement: true, keyPath: 'id'});
         });
       };
+
       conn.onerror = function (event) {
         console.log('Error', event);
         Ember.run(function () {
-          reject();
+          reject(event);
         });
       };
     });
+
+  },
+  saveToIndexedDB: function (modelName, record) {
+
+    var self = this;
+    return new Ember.RSVP.Promise(function (resolve, reject) {
+
+      self.openDatabase().then(function (conn) {
+        var transaction = conn.transaction(modelName, 'readwrite');
+        var objectStore = transaction.objectStore(modelName);
+        var request = objectStore.add(record);
+        var id;
+        transaction.oncomplete = function () {
+          conn.close();
+          resolve(id);
+        };
+
+        request.onsuccess = function (event) {
+          id = event.target.result;
+        };
+
+        request.onerror = function (event) {
+          console.error(event);
+          reject(event);
+        };
+      });
+    });
+  },
+  toString: function () {
+    return 'EmberIDBAdapter';
   }
 });
