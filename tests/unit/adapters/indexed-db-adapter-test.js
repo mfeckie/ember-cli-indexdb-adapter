@@ -6,7 +6,7 @@ import {
 import {
   deleteDatabase,
   openDatabase,
-  createStore
+  setupStore
   } from  'dummy/tests/helpers/database-helpers';
 
 import Ember from 'ember';
@@ -98,3 +98,4 @@ test('Can create a record', function () {
     });
   });
 });
+

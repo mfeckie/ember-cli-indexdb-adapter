@@ -5,12 +5,24 @@ export default DS.Adapter.extend({
   databaseName: 'Ember-IDBAdapter',
   version: 1,
   init: function () {
-    //this.openDatabase();
+    var self = this;
+    this.openDatabase().then(function (db) {
+      db.close();
+    }, function (err) {
+      console.log(err);
+    }).then(function () {
+      if (self.models.length > 0) {
+        self.models.forEach(function (model) {
+          self.addModel(model);
+        });
+      }
+    });
   },
   openDatabase: function () {
     var self = this;
     return new Ember.RSVP.Promise(function (resolve, reject) {
       var openRequest = indexedDB.open(self.get('databaseName'), self.get('version'));
+
       openRequest.onsuccess = function (event) {
         Ember.run(function () {
           resolve(event.target.result);
@@ -24,6 +36,7 @@ export default DS.Adapter.extend({
       };
     });
   },
+  models: [],
   addModel: function (modelName) {
     var self = this;
 
@@ -65,6 +78,7 @@ export default DS.Adapter.extend({
         var objectStore = transaction.objectStore(modelName);
         var request = objectStore.add(record);
         var id;
+
         transaction.oncomplete = function () {
           conn.close();
           resolve(id);

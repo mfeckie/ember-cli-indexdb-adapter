@@ -36,28 +36,48 @@ export function deleteDatabase(databaseName) {
   });
 }
 
-export function setupStore(opts) {
-  var env = {};
-  var options = opts || {};
+export function setupStore(options) {
+  var container, registry;
+  var emberChannel = QUnit.urlParams.emberChannel || 'release';
 
-  var container = env.container = new Ember.Container();
+  var env = {};
+  options = options || {};
+
+  if (emberChannel.match(/^beta|canary$/i)) {
+    registry = env.registry = new Ember.Registry();
+    container = env.container = registry.container();
+  } else {
+    container = env.container = new Ember.Container();
+    registry = env.registry = container;
+  }
+
+  env.replaceContainerNormalize = function replaceContainerNormalize(fn) {
+    if (env.registry) {
+      env.registry.normalize = fn;
+    } else {
+      env.container.normalize = fn;
+    }
+  };
 
   var adapter = env.adapter = (options.adapter || DS.Adapter);
   delete options.adapter;
 
   for (var prop in options) {
-    container.register('model:' + prop, options[prop]);
+    registry.register('model:' + prop, options[prop]);
   }
 
-  container.register('store:main', DS.Store.extend({
+  registry.register('store:main', DS.Store.extend({
     adapter: adapter
   }));
 
-  container.register('serializer:application', IndexedDBSerializer.extend());
+  registry.register('serializer:-default', DS.JSONSerializer);
+  registry.register('serializer:-rest', DS.RESTSerializer);
+  registry.register('adapter:-rest', DS.RESTAdapter);
 
-  container.injection('serializer', 'store', 'store:main');
+  registry.injection('serializer', 'store', 'store:main');
 
-  env.serializer = container.lookup('serializer:application');
+  env.serializer = container.lookup('serializer:-default');
+  env.restSerializer = container.lookup('serializer:-rest');
   env.store = container.lookup('store:main');
   env.adapter = env.store.get('defaultAdapter');
 
