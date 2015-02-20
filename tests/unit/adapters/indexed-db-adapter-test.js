@@ -74,28 +74,56 @@ test('Adds two models', function () {
   });
 });
 
-test('Can create a record', function () {
-  expect(1);
 
-  var superhero = {
-    name: 'The Flash'
-  };
-  adapter.addModel('superhero').then(function () {
-    adapter.saveToIndexedDB('superhero', superhero).then(function (createdID) {
-      adapter.openDatabase().then(function (db) {
+(function () {
+  var databaseName = 'creation-test';
+  var SuperHero = DS.Model.extend({
+    name: DS.attr()
+  });
 
-        var transaction = db.transaction('superhero', 'readonly');
-        var objectStore = transaction.objectStore('superhero');
-        var returnedHero = objectStore.get(createdID);
+  var env = setupStore({
+    adapter: IndexedDbAdapter.extend({
+      databaseName: databaseName,
+      models: ['superhero']
+    }),
+    superhero: SuperHero
+  });
 
-        returnedHero.onsuccess = function (event) {
-          var result = event.target.result;
+  var store = env.store;
 
-          equal(result.name, superhero.name);
-          db.close();
-        };
+
+  test('can persist a record', function () {
+    Ember.run(function () {
+      var wonderWoman = {name: 'Wonder Woman'};
+      var record = store.createRecord('superhero', wonderWoman);
+      var promise = record.save();
+      promise.then(function () {
+        env.adapter.openDatabase().then(function (conn) {
+          var transaction = conn.transaction('superhero', 'readonly');
+          var objectStore = transaction.objectStore('superhero');
+          var request = objectStore.get(1);
+
+          transaction.oncomplete = function () {
+            deleteDatabase(databaseName);
+          };
+
+          transaction.onerror = function (event) {
+            console.error(event);
+          };
+
+          request.onsuccess = function (event) {
+            var result = event.target.result;
+            deepEqual(result, {id: 1, name: 'Wonder Woman'});
+            conn.close();
+          };
+
+          request.onerror = function (event) {
+            console.error(event);
+            conn.close();
+          };
+        });
       });
     });
   });
-});
 
+})();

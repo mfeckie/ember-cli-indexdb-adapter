@@ -36,48 +36,76 @@ export function deleteDatabase(databaseName) {
   });
 }
 
-export function setupStore(options) {
-  var container, registry;
-  var emberChannel = QUnit.urlParams.emberChannel || 'release';
+//export function setupStore(options) {
+//  var container, registry;
+//  var emberChannel = QUnit.urlParams.emberChannel || 'release';
+//
+//  var env = {};
+//  options = options || {};
+//
+//  if (emberChannel.match(/^beta|canary$/i)) {
+//    registry = env.registry = new Ember.Registry();
+//    container = env.container = registry.container();
+//  } else {
+//    container = env.container = new Ember.Container();
+//    registry = env.registry = container;
+//  }
+//
+//  env.replaceContainerNormalize = function replaceContainerNormalize(fn) {
+//    if (env.registry) {
+//      env.registry.normalize = fn;
+//    } else {
+//      env.container.normalize = fn;
+//    }
+//  };
+//
+//  var adapter = env.adapter = (options.adapter || DS.Adapter);
+//  delete options.adapter;
+//
+//  for (var prop in options) {
+//    registry.register('model:' + prop, options[prop]);
+//  }
+//
+//  registry.register('store:main', DS.Store.extend({
+//    adapter: adapter
+//  }));
+//
+//  registry.register('serializer:application', DS.JSONSerializer);
+//  registry.register('adapter:-rest', DS.RESTAdapter);
+//
+//  registry.injection('serializer', 'store', 'store:main');
+//
+//  env.serializer = container.lookup('serializer:application');
+//  env.store = container.lookup('store:main');
+//  env.adapter = env.store.get('defaultAdapter');
+//
+//  return env;
+//}
 
+export function setupStore (options) {
   var env = {};
   options = options || {};
 
-  if (emberChannel.match(/^beta|canary$/i)) {
-    registry = env.registry = new Ember.Registry();
-    container = env.container = registry.container();
-  } else {
-    container = env.container = new Ember.Container();
-    registry = env.registry = container;
-  }
+  DS.IndexedDBSerializer = DS.JSONSerializer.extend();
 
-  env.replaceContainerNormalize = function replaceContainerNormalize(fn) {
-    if (env.registry) {
-      env.registry.normalize = fn;
-    } else {
-      env.container.normalize = fn;
-    }
-  };
+  var container = env.container = new Ember.Container();
 
   var adapter = env.adapter = (options.adapter || DS.Adapter);
   delete options.adapter;
 
   for (var prop in options) {
-    registry.register('model:' + prop, options[prop]);
+    container.register('model:' + prop, options[prop]);
   }
 
-  registry.register('store:main', DS.Store.extend({
+  container.register('store:main', DS.Store.extend({
     adapter: adapter
   }));
 
-  registry.register('serializer:-default', DS.JSONSerializer);
-  registry.register('serializer:-rest', DS.RESTSerializer);
-  registry.register('adapter:-rest', DS.RESTAdapter);
+  container.register('serializer:application', DS.IndexedDBSerializer.extend());
 
-  registry.injection('serializer', 'store', 'store:main');
+  container.injection('serializer', 'store', 'store:main');
 
-  env.serializer = container.lookup('serializer:-default');
-  env.restSerializer = container.lookup('serializer:-rest');
+  env.serializer = container.lookup('serializer:application');
   env.store = container.lookup('store:main');
   env.adapter = env.store.get('defaultAdapter');
 

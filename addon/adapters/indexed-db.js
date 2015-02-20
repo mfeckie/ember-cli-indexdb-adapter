@@ -66,22 +66,24 @@ export default DS.Adapter.extend({
         });
       };
     });
-
   },
-  saveToIndexedDB: function (modelName, record) {
-
+  createRecord: function (store, type, record) {
+    var modelName = type.typeKey;
+    var data = record.serialize();
     var self = this;
+
     return new Ember.RSVP.Promise(function (resolve, reject) {
 
       self.openDatabase().then(function (conn) {
         var transaction = conn.transaction(modelName, 'readwrite');
         var objectStore = transaction.objectStore(modelName);
-        var request = objectStore.add(record);
+        var request = objectStore.add(data);
         var id;
 
         transaction.oncomplete = function () {
           conn.close();
-          resolve(id);
+          record.id = id;
+          resolve();
         };
 
         request.onsuccess = function (event) {
@@ -94,6 +96,47 @@ export default DS.Adapter.extend({
         };
       });
     });
+  },
+  find: function (store, type, id, record) {
+    console.log(record);
+
+    var self = this;
+    var modelName = type.typeKey;
+
+    return new Ember.RSVP.Promise(function (resolve, reject) {
+      self.openDatabase().then(function (conn) {
+        var transaction = conn.transaction(modelName, 'readonly');
+        var objectStore = transaction.objectStore(modelName);
+        var request = objectStore.get(id);
+
+        transaction.onerror = function (event) {
+          console.error(event);
+        };
+
+        request.onsuccess = function (event) {
+          var result = event.target.result;
+          console.log(event);
+          conn.close();
+          resolve(result);
+        };
+
+        request.onerror = function (event) {
+          console.error(event);
+          conn.close();
+          reject(event);
+        };
+
+      });
+    });
+  },
+  findAll: function (store, type, sinceToken) {
+
+    var query;
+
+    if (sinceToken) {
+      query = {since: sinceToken};
+    }
+    return [];
   },
   toString: function () {
     return 'EmberIDBAdapter';
